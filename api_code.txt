@@ -1,0 +1,9 @@
+total URL:https://lmk4100.cafe24api.com/api/v2/oauth/authorize?response_type=code&client_id=ZdAS2dg4D19hIZ3BiPV3HB&state=app_install&redirect_uri=https://cafe24.dev/auth_code&scope=mall.read_application,mall.write_application,mall.read_product,mall.write_product
+
+쇼핑몰아이디:lmk4100
+클라이언트ID:ZdAS2dg4D19hIZ3BiPV3HB
+state:app_install
+Redirect URI: https://cafe24.dev/auth_code
+scope:mall.read_application,mall.write_application,mall.read_product,mall.write_product
+
+code:G94xfQaxEy4HPeHSLm4GLG
