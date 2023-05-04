@@ -1,38 +1,14 @@
 import openpyxl
 import pandas as pd
-from pyautogui import size
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import subprocess
-import shutil
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from bs4 import BeautifulSoup
 import time
 import datetime
-import pyautogui
-import pyperclip
-import csv
 import sys
 import os
 import math
 import requests
 import re
 import random
-import chromedriver_autoinstaller
-from PyQt5.QtWidgets import QWidget, QApplication, QTreeView, QFileSystemModel, QVBoxLayout, QPushButton, QInputDialog, \
-    QLineEdit, QMainWindow, QMessageBox, QFileDialog
-from PyQt5.QtCore import QCoreApplication
-from selenium.webdriver import ActionChains
-from datetime import datetime, date, timedelta
-import numpy
 import datetime
-# from window import Ui_MainWindow
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
 import json
 import requests
 import pprint
@@ -52,7 +28,7 @@ def get_auth(code):
         'Content-Type': "application/x-www-form-urlencoded"
     }
     response = requests.request("POST", url, data=payload, headers=headers)
-    print(response.text)
+    print("get_auth:",response.text)
     result=json.loads(response.text)
 
     with open('token.json', 'w') as f:
@@ -77,6 +53,7 @@ def get_token_from_fresh_token(refresh_token):
         }
     response = requests.request("POST", url, data=payload, headers=headers)
     result = json.loads(response.text)
+    print("get_token_from_refresh_token",response.text)
 
     with open('token.json', 'w') as f:
         json.dump(result, f, indent=2)
@@ -91,7 +68,7 @@ def get_memo(access_token,product_no):
     response = requests.request("GET", url, headers=headers)
     # print(response.text)
     result=json.loads(response.text)
-    # pprint.pprint(result)
+    print("get_memo:",response.text)
     return result
 
 def get_product_info(access_token,product_no):
@@ -104,9 +81,8 @@ def get_product_info(access_token,product_no):
     response = requests.request("GET", url, headers=headers)
     # print(response.text)
     result=json.loads(response.text)
-    # pprint.pprint(result)
+    print("get_product_info:",response.text)
     return result
-
 
 def get_nft_info(collection,name):
 
@@ -139,7 +115,6 @@ def get_nft_info(collection,name):
         # print("--------------------------------")
     return price
 
-
 def change_price(product_no,price,access_token):
     url = "https://lmk4100.cafe24api.com/api/v2/admin/products/{}".format(product_no)
     # payload = f'''{
@@ -156,11 +131,7 @@ def change_price(product_no,price,access_token):
         'X-Cafe24-Api-Version': "2023-03-01"
     }
     response = requests.request("PUT", url, data=payload, headers=headers)
-    print(response.text)
-
-
-
-
+    print("change_price",response.text)
 
 with open('token.json', 'r') as f:
     json_data = json.load(f)
@@ -179,31 +150,64 @@ print(access_token)
 
 data_list=list(pd.read_csv('list.csv')['상품번호'])
 print(data_list)
-for product_no in data_list:
+for index,product_no in enumerate(data_list):
+    print("{}번째 동기화중...".format(index+1))
+    if index%100==0 and index>=1:
+        with open('token.json', 'r') as f:
+            json_data = json.load(f)
+        # 인증정보 얻어오기
+        refresh_token = json_data['refresh_token']
+        print(refresh_token)
+        get_token_from_fresh_token(refresh_token)
+        with open('token.json', 'r') as f:
+            json_data = json.load(f)
+        access_token = json_data['access_token']
+        print(access_token)
+
     time_now=datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     print("time:",time_now)
-    memo=get_memo(access_token,product_no)
-    time.sleep(0.5)
-    contracts=memo['memos'][0]['memo']
-    while True:
-        try:
-            product_info=get_product_info(access_token,product_no)
-            break
-        except:
-            print("접속 POOL")
-            time.sleep(1)
-    time.sleep(0.5)
-    collection = product_info['product']['product_name'].split("_")[0]
-    name=product_info['product']['product_name'].split("_")[-1]
-    print('product_no:',product_no)
-    print('contracts:',contracts)
-    print("collection:",collection)
-    print('name:',name)
-    price=get_nft_info(contracts,name)
-    print('price:',price)
-    change_price(product_no,price,access_token)
+    try:
+        memo=get_memo(access_token,product_no)
+        contracts = memo['memos'][0]['memo']
+
+    except:
+        print("접속POOL1")
+        time.sleep(60)
+        continue
+    time.sleep(0.6)
+
+    try:
+        product_info=get_product_info(access_token,product_no)
+        collection = product_info['product']['product_name'].split("_")[0]
+        name = product_info['product']['product_name'].split("_")[-1]
+        print('product_no:', product_no)
+        print('contracts:', contracts)
+        print("collection:", collection)
+        print('name:', name)
+    except:
+        print("접속 POOL2")
+        time.sleep(60)
+        continue
+    time.sleep(0.6)
+
+    try:
+        price=get_nft_info(contracts,name)
+        print('price:', price)
+
+    except:
+        print("접속POOL3")
+        time.sleep(60)
+        continue
+
+    try:
+        change_price(product_no, price, access_token)
+    except:
+        print("접속POOL4")
+        time.sleep(60)
+        continue
+
     print("=============================")
-    time.sleep(0.5)
+    time.sleep(0.6)
 
 
 
